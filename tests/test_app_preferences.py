@@ -100,6 +100,21 @@ class PreferencesTests(unittest.TestCase):
             self.assertEqual(restored["tabs"]["hidden"], ["Resolver"])
             self.assertEqual(restored["options"]["startup_page"], "DHCP Options")
 
+    def test_new_site_planner_joins_old_ip_math_layout_without_overriding_custom_choice(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "settings.json"
+            old = default_preferences()
+            old["tabs"]["order"].remove("Site Planner")
+            del old["tabs"]["assignments"]["Site Planner"]
+            save_preferences(old, path)
+            restored = load_preferences(path)
+            self.assertEqual(restored["tabs"]["assignments"]["Site Planner"], "ip_math")
+            self.assertEqual(restored["tabs"]["order"][2], "Site Planner")
+
+            restored["tabs"]["assignments"].pop("Site Planner")
+            save_preferences(restored, path)
+            self.assertNotIn("Site Planner", load_preferences(path)["tabs"]["assignments"])
+
     def test_all_tabs_cannot_be_hidden_by_saved_settings(self):
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / "settings.json"

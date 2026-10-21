@@ -1,6 +1,6 @@
 # Layer 8 Toolkit
 
-Version 1.0.0 — a portable Windows toolkit for network engineers.
+Version 1.1.0 — a portable Windows toolkit for network engineers.
 
 ![Layer 8 Toolkit 1.0.0 showing the IPv4 subnet calculator](docs/images/layer-8-toolkit-1.0.0.jpg)
 
@@ -9,7 +9,7 @@ Download the one-file Windows application from the [latest release](https://gith
 ## What's included
 
 - **Resolver:** paste or load up to five switch MAC tables and two router ARP tables, correlate MACs to IPs, inspect an input report, search and sort results, and export visible rows to CSV or filterable Excel. MAC-only Excel exports remain sortable and filterable.
-- **IP tools:** IPv4 and IPv6 subnet calculators, IPv6 subnet planning, wildcard-mask checker, and decimal/hex/binary IPv4 conversion.
+- **IP tools:** IPv4 and IPv6 subnet calculators, IPv6 subnet planning, an IPv4 Site Planner for repeated VLAN layouts, wildcard-mask checker, and decimal/hex/binary IPv4 conversion.
 - **DHCP and network references:** common DHCP option explanations and encoders, including Cisco WLC/custom Option 43 and classless-route Option 121; an offline searchable IANA port snapshot; DNS record builder; and MTU/overhead calculator.
 - **Utilities:** multiline MAC formatter with offline OUI lookup, Cisco Type 7 decrypter, and Wi-Fi join QR codes with PNG/SVG export, image/payload copy, print sizing, and optional live preview.
 - **Workspace settings:** dark/light palettes with editable hex colors, startup tab, and persistent tab order, visibility, and custom groups. Settings open inside the main window.
@@ -24,6 +24,10 @@ All calculations and reference searches work offline. Updating the optional OUI 
 4. Choose a network tool from the top tab strip. Use **Settings → Tabs** to reorder, hide, or group tabs, and **Settings → General** to choose the startup tab.
 
 Resolver options such as MAC formatting, port-channel/CPU exclusion, and IP-match filtering are in Settings. Raw switch/router output is saved only when you explicitly save a session. On first run, Toolkit can copy preferences from an existing SwitchPort Resolver installation; afterward the applications keep separate settings and logs. See the [team guide](docs/TEAM_GUIDE.md) for data-handling guidance.
+
+### Site Planner
+
+Under **IP Math → Site Planner**, enter a parent IPv4 CIDR and one `VLAN, name, /prefix` line per VLAN. Leave the site block on **Auto** for the smallest fit, or enter a shorter prefix such as `/21` to reserve growth space. Set the number of sites to generate; the planner shows maximum capacity, each site's summary CIDR, VLAN allocations, and exact unallocated CIDRs. You can copy a selected CIDR, copy the complete plan, or export CSV. It calculates locally and never changes network configuration.
 
 ## Important notes
 
@@ -44,7 +48,7 @@ python -m pip install pyinstaller
 powershell -ExecutionPolicy Bypass -File scripts\build_release.ps1
 ```
 
-The build script runs tests and a compile check, then creates a versioned EXE under `dist/`. See the [deployment guide](docs/DEPLOYMENT.md) for validation and rollout details.
+The build script runs tests and a compile check, then creates `dist/Layer8Toolkit.exe`. GitHub keeps a separate copy of this filename with each release. See the [deployment guide](docs/DEPLOYMENT.md) for validation and rollout details.
 
 ## License
 

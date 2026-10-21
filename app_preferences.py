@@ -50,7 +50,7 @@ COLOR_LABELS = {
 
 MAC_FORMATS = ("As seen", "AA:BB:CC:DD:EE:FF", "AAAA.BBBB.CCCC")
 STARTUP_PAGES = (
-    "Resolver", "IPv4 Subnet", "IPv6 Calculator", "IPv6 Planning",
+    "Resolver", "IPv4 Subnet", "Site Planner", "IPv6 Calculator", "IPv6 Planning",
     "Wildcard Checker", "Decimal IP", "DHCP Options", "MAC Formatter + OUI",
     "Type 7 Decrypter", "Port Reference", "DNS Records",
     "MTU Calculator", "Wi-Fi QR",
@@ -62,6 +62,7 @@ DEFAULT_GROUPS = (
 )
 DEFAULT_ASSIGNMENTS = {
     "IPv4 Subnet": "ip_math", "IPv6 Calculator": "ip_math",
+    "Site Planner": "ip_math",
     "IPv6 Planning": "ip_math", "Wildcard Checker": "ip_math",
     "Decimal IP": "ip_math",
     "MTU Calculator": "ip_math",
@@ -191,6 +192,8 @@ def load_preferences(path=None):
                 for label in stored_order:
                     if isinstance(label, str) and label in STARTUP_PAGES and label not in order:
                         order.append(label)
+                if "Site Planner" not in order and "IPv4 Subnet" in order:
+                    order.insert(order.index("IPv4 Subnet") + 1, "Site Planner")
                 preferences["tabs"]["order"] = order + [label for label in STARTUP_PAGES if label not in order]
             stored_hidden = tabs.get("hidden", [])
             if isinstance(stored_hidden, list):
@@ -229,10 +232,16 @@ def load_preferences(path=None):
                     and label in STARTUP_PAGES and label != "Resolver" and group_id in known_ids
                 }
                 # Move the old default layout forward without changing custom group choices.
-                if (preferences["tabs"]["assignments"] == LEGACY_DEFAULT_ASSIGNMENTS
+                old_default = {label: group_id for label, group_id in LEGACY_DEFAULT_ASSIGNMENTS.items()
+                               if label != "Site Planner"}
+                if (preferences["tabs"]["assignments"] in (LEGACY_DEFAULT_ASSIGNMENTS, old_default)
                         and {group["id"]: group["name"] for group in preferences["tabs"]["groups"]}
                         == {group["id"]: group["name"] for group in DEFAULT_GROUPS}):
                     preferences["tabs"]["assignments"]["MAC Formatter + OUI"] = "utilities"
+                if ("Site Planner" not in stored_assignments
+                        and (not isinstance(stored_order, list) or "Site Planner" not in stored_order)
+                        and "ip_math" in known_ids):
+                    preferences["tabs"]["assignments"]["Site Planner"] = "ip_math"
             elif isinstance(stored_groups, list):
                 preferences["tabs"]["assignments"] = {}
         if preferences["options"]["startup_page"] in preferences["tabs"]["hidden"]:

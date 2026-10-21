@@ -95,6 +95,42 @@ class MacFormatterUiTests(unittest.TestCase):
         self.view.apply_theme(THEMES["light"])
         self.assertEqual(self.view.dhcp_wlc_input.cget("background"), THEMES["light"]["tool_input_bg"])
 
+    def test_site_planner_capacity_copy_export_and_stale_results(self):
+        self.assertIn("Site Planner", self.view.page_frames)
+        self.view.site_block_prefix.set("/21")
+        self.view.site_count.set("2")
+        self.view._generate_site_plan()
+        self.assertEqual(self.view.site_plan["max_sites"], 32)
+        self.assertEqual(self.view.site_plan["free_per_site"], 1024)
+        self.assertEqual(len(self.view.site_tree.get_children()), 2)
+        first = self.view.site_tree.get_children()[0]
+        self.assertEqual(len(self.view.site_tree.get_children(first)), 6)
+        self.assertIn("4 × /24 equivalent", self.view.site_space_summary.get())
+
+        copied = []
+        self.view._copy = copied.append
+        self.view.site_tree.selection_set(first)
+        self.view._copy_site_cidr()
+        self.assertEqual(copied[-1], "10.0.0.0/21")
+        self.view._copy_site_plan()
+        self.assertIn("10.0.4.0/22", copied[-1])
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "site-plan.csv"
+            with patch("tools_ui.filedialog.asksaveasfilename", return_value=str(path)):
+                self.view._export_site_plan()
+            self.assertIn("10.0.4.0/22", path.read_text(encoding="utf-8-sig"))
+
+        self.view.site_count.set("bad")
+        self.assertIsNone(self.view.site_plan)
+        self.assertFalse(self.view.site_tree.get_children())
+        self.assertEqual(str(self.view.site_copy_plan_button.cget("state")), "disabled")
+        self.view._generate_site_plan()
+        self.assertTrue(self.view.site_error.get())
+
+    def test_site_template_uses_customizable_input_color(self):
+        self.view.apply_theme(THEMES["dark"])
+        self.assertEqual(self.view.site_template.cget("background"), THEMES["dark"]["tool_input_bg"])
+
     def test_option121_builder_and_decoder_modes(self):
         self.view.dhcp_choice.set("121 — Classless static routes")
         self.view._switch_dhcp_option()

@@ -1,6 +1,7 @@
 """Network utility tabs for Layer 8 Toolkit."""
 
 import base64
+import csv
 import ipaddress
 import math
 import tkinter as tk
@@ -19,6 +20,7 @@ from dns_helper import RECORD_TYPES, RECORD_USES, build_dns_record, reverse_ptr_
 from dhcp_option121 import decode_option121, encode_option121
 from mtu_helper import TUNNEL_OVERHEAD, calculate_mtu, mtu_summary
 from port_reference import REGISTRY_DATE, load_port_registry, search_ports
+from site_planner import plan_sites, site_plan_rows
 from wifi_qr import (MIXED, OPEN, PERSONAL, SECURITY_CHOICES, WEP, WPA3,
                      copy_dib_to_clipboard, wifi_payload, wifi_qr_dib,
                      wifi_qr_png, wifi_qr_svg)
@@ -81,6 +83,7 @@ class NetworkToolsView(ttk.Frame):
         # The Resolver tab is inserted first by the main application.
         self.tabs.pack(fill="both", expand=True, pady=(WORKSPACE_TOP_GAP, 0))
         self._build_ipv4()
+        self._build_site_planner()
         self._build_ipv6()
         self._build_ipv6_planner()
         self._build_wildcard()
@@ -308,6 +311,149 @@ class NetworkToolsView(ttk.Frame):
         rows = [f"{key}: {value.get()}" for key, value in
                 {**self.ipv4_mask_details, **self.ipv4_addresses}.items()]
         self._copy("\n".join(rows))
+
+    def _build_site_planner(self):
+        page = self._page("Site Planner")
+        ttk.Label(page, text="Repeat a VLAN template inside aligned site blocks. Planning stays offline; no network is contacted.",
+                  style="Muted.TLabel").pack(anchor="w", pady=(0, 8))
+        fields = ttk.Frame(page)
+        fields.pack(fill="x", pady=(0, 8))
+        self.site_parent = tk.StringVar(value="10.0.0.0/16")
+        self.site_block_prefix = tk.StringVar(value="Auto")
+        self.site_count = tk.StringVar(value="4")
+        self._field(fields, "PARENT NETWORK", self.site_parent, 22)
+        self._field(fields, "SITE BLOCK (AUTO OR /PREFIX)", self.site_block_prefix, 21)
+        self._field(fields, "SITES TO GENERATE", self.site_count, 16)
+        self._button(fields, "Generate plan", self._generate_site_plan,
+                     "Allocate every VLAN within each site block", "Accent.TButton")
+        ttk.Label(page, text="VLAN TEMPLATE — one line per VLAN: ID, name, /prefix. Larger networks are placed first.",
+                  style="Muted.TLabel").pack(anchor="w", pady=(0, 4))
+        self.site_template = tk.Text(page, height=5, wrap="none")
+        self.site_template.pack(fill="x", pady=(0, 8))
+        self.site_template.insert("1.0", "10, Utility, /25\n11, Data, /24\n12, Voice, /24\n13, Wi-Fi, /24\n14, Guest, /25")
+        self.site_template.edit_modified(False)
+        self.site_error = tk.StringVar()
+        ttk.Label(page, textvariable=self.site_error, style="Error.TLabel").pack(anchor="w")
+
+        summary = self._section(page, "CAPACITY")
+        self.site_capacity_summary = tk.StringVar()
+        self.site_space_summary = tk.StringVar()
+        ttk.Label(summary, textvariable=self.site_capacity_summary, style="Value.TLabel").pack(anchor="w", pady=(0, 4))
+        ttk.Label(summary, textvariable=self.site_space_summary, style="Muted.TLabel").pack(anchor="w")
+
+        results = ttk.LabelFrame(page, text="SITE AND VLAN PLAN", padding=10)
+        results.pack(fill="both", expand=True)
+        actions = ttk.Frame(results)
+        actions.pack(fill="x", pady=(0, 7))
+        self.site_copy_network_button = ttk.Button(actions, text="Copy selected CIDR", command=self._copy_site_cidr)
+        self.site_copy_network_button.pack(side="left", padx=(0, 8))
+        self.site_copy_plan_button = ttk.Button(actions, text="Copy full plan", command=self._copy_site_plan)
+        self.site_copy_plan_button.pack(side="left", padx=(0, 8))
+        self.site_export_button = ttk.Button(actions, text="Export CSV", command=self._export_site_plan)
+        self.site_export_button.pack(side="left")
+        table = ttk.Frame(results)
+        table.pack(fill="both", expand=True)
+        columns = ("vlan", "name", "network", "addresses", "usable")
+        self.site_tree = ttk.Treeview(table, columns=columns, show="tree headings", height=10)
+        self.site_tree.heading("#0", text="Site")
+        self.site_tree.column("#0", width=86, minwidth=70, stretch=False)
+        for column, label, width in (("vlan", "VLAN", 60), ("name", "Name", 140),
+                                     ("network", "Network", 150), ("addresses", "Addresses", 95),
+                                     ("usable", "Usable / free", 105)):
+            self.site_tree.heading(column, text=label)
+            self.site_tree.column(column, width=width, anchor="w")
+        yscroll = ttk.Scrollbar(table, orient="vertical", command=self.site_tree.yview)
+        xscroll = ttk.Scrollbar(table, orient="horizontal", command=self.site_tree.xview)
+        self.site_tree.configure(yscrollcommand=yscroll.set, xscrollcommand=xscroll.set)
+        self.site_tree.grid(row=0, column=0, sticky="nsew")
+        yscroll.grid(row=0, column=1, sticky="ns")
+        xscroll.grid(row=1, column=0, sticky="ew")
+        table.columnconfigure(0, weight=1)
+        table.rowconfigure(0, weight=1)
+        self.site_plan = None
+        for variable in (self.site_parent, self.site_block_prefix, self.site_count):
+            variable.trace_add("write", self._invalidate_site_plan)
+        self.site_template.bind("<<Modified>>", self._site_template_changed)
+        self._generate_site_plan()
+
+    def _site_template_changed(self, _event=None):
+        if self.site_template.edit_modified():
+            self.site_template.edit_modified(False)
+            self._invalidate_site_plan()
+
+    def _invalidate_site_plan(self, *_args):
+        self.site_plan = None
+        self.site_error.set("")
+        self.site_capacity_summary.set("")
+        self.site_space_summary.set("")
+        for item in self.site_tree.get_children():
+            self.site_tree.delete(item)
+        for button in (self.site_copy_network_button, self.site_copy_plan_button, self.site_export_button):
+            button.configure(state="disabled")
+
+    def _generate_site_plan(self):
+        self._invalidate_site_plan()
+        try:
+            plan = plan_sites(self.site_parent.get(), self.site_template.get("1.0", "end"),
+                              self.site_block_prefix.get(), self.site_count.get())
+        except ValueError as error:
+            self._error(self.site_error, error)
+            return
+        self.site_plan = plan
+        self.site_capacity_summary.set(
+            f"Minimum /{plan['minimum_site_prefix']}  •  selected /{plan['site_prefix']}  •  "
+            f"{plan['max_sites']:,} sites fit in {plan['parent']}  •  {plan['generated_sites']:,} generated")
+        free = plan["free_per_site"]
+        equivalent = f" ({free // 256:,} × /24 equivalent)" if free and free % 256 == 0 else ""
+        self.site_space_summary.set(
+            f"Per site: {plan['required_per_site']:,} assigned / {plan['site_capacity']:,} total  •  "
+            f"{free:,} unallocated{equivalent}")
+        for site in plan["sites"]:
+            parent = self.site_tree.insert("", "end", text=f"Site {site['number']}",
+                                           values=("", "Site block", str(site["network"]),
+                                                   f"{plan['site_capacity']:,}", f"{free:,} free"),
+                                           open=site["number"] == 1)
+            for vlan in site["vlans"]:
+                self.site_tree.insert(parent, "end", values=(vlan["vlan"], vlan["name"],
+                                    str(vlan["network"]), f"{vlan['addresses']:,}",
+                                    f"{vlan['usable']:,}"))
+            for network in site["free_networks"]:
+                self.site_tree.insert(parent, "end", values=("", "Unallocated", str(network),
+                                    f"{network.num_addresses:,}", "—"))
+        for button in (self.site_copy_network_button, self.site_copy_plan_button, self.site_export_button):
+            button.configure(state="normal")
+        self.status_callback(f"Planned {plan['generated_sites']:,} site blocks within {plan['parent']}")
+
+    def _copy_site_cidr(self):
+        selected = self.site_tree.selection()
+        if selected:
+            self._copy(self.site_tree.item(selected[0], "values")[2])
+
+    def _copy_site_plan(self):
+        if self.site_plan is None:
+            return
+        header = ("Site", "Site CIDR", "VLAN", "Name", "Network", "Addresses", "Usable")
+        lines = ["\t".join(header)]
+        lines.extend("\t".join(map(str, row)) for row in site_plan_rows(self.site_plan))
+        self._copy("\n".join(lines))
+
+    def _export_site_plan(self):
+        if self.site_plan is None:
+            return
+        path = filedialog.asksaveasfilename(parent=self.winfo_toplevel(), title="Export site plan",
+                                            initialfile="site-plan.csv", defaultextension=".csv",
+                                            filetypes=[("CSV file", "*.csv")])
+        if not path:
+            return
+        try:
+            with open(path, "w", encoding="utf-8-sig", newline="") as stream:
+                writer = csv.writer(stream)
+                writer.writerow(("Site", "Site CIDR", "VLAN", "Name", "Network", "Addresses", "Usable"))
+                writer.writerows(site_plan_rows(self.site_plan))
+        except OSError as error:
+            self._error(self.site_error, f"Could not export site plan: {error}")
+            return
+        self.status_callback("Site plan exported to CSV")
 
     def _build_ipv6(self):
         page = self._page("IPv6 Calculator")
@@ -1688,7 +1834,7 @@ class NetworkToolsView(ttk.Frame):
                 background=palette["entry_bg"], foreground=palette["fg"],
                 troughcolor=palette["button_bg"], activebackground=palette["select_bg"],
             )
-        for widget_name in ("mac_input", "dhcp_input", "dhcp_wlc_input",
+        for widget_name in ("site_template", "mac_input", "dhcp_input", "dhcp_wlc_input",
                             "dhcp_custom_input", "dhcp_raw_input", "dhcp_121_build_input",
                             "dhcp_121_decode_input"):
             widget = getattr(self, widget_name, None)
