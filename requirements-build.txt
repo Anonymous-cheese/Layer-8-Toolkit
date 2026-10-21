@@ -1,0 +1,5 @@
+# Only needed when building/running the Python source. Both packages are bundled
+# into the one-file Windows executable; end users install nothing separately.
+qrcode==8.2
+pypng==0.20220715.0
+colorama==0.4.6
