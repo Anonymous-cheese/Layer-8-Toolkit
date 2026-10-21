@@ -1,20 +1,25 @@
-# Internal preview and release guide
+# Build and release guide
 
-This repository builds a Windows one-file executable with PyInstaller. Version `4.1.0` is a portable release build. It is not code-signed and does not auto-update.
+Layer 8 Toolkit 1.0.0 is a portable, one-file Windows EXE. It is not code-signed and does not auto-update. End users need no Python installation or separate data download.
 
-For a local preview, install build requirements once with `python -m pip install -r requirements-build.txt`, close any running preview EXE, and run `powershell -ExecutionPolicy Bypass -File scripts\build_preview.ps1`. The script runs tests and a compile check before creating `dist-toolkit-preview\Layer 8 Toolkit.exe`, then prints its SHA-256 checksum. The EXE includes the QR library, license notices, and an IANA port-registry snapshot; users do not install dependencies or fetch data.
+## Build
 
-## Before a team release
+Install the build dependencies on Windows, then run the release script from the repository root:
 
-1. Run `python -m unittest discover -s tests -v` and `python -m py_compile oui_offline.pyw resolver_workflow.py network_tools.py tools_ui.py app_preferences.py`.
-2. Test the packaged app on representative Windows 10/11 PCs, including high-DPI displays, keyboard navigation, light/dark themes, MAC-only data, two-router correlation, import warnings, session open/save, CSV/Excel export, search for both `53` and `remote desktop`, and Wi-Fi QR scanning, PNG/SVG export, and image copy from personal/open test networks while disconnected from the internet.
-3. Set a non-preview version in `oui_offline.pyw`, update README/changelog, and build from a clean commit with `python -m PyInstaller --clean --noconfirm "Layer 8 Toolkit.spec"`.
-4. Record the SHA-256 checksum of the EXE (`Get-FileHash "dist\Layer 8 Toolkit.exe" -Algorithm SHA256`) and include it with the release notes. Keep prior releases available for rollback.
-5. Decide with IT whether to distribute the portable EXE, package it as a signed installer/MSIX, or deploy through an existing device-management system. Code signing requires an organization-approved certificate; this repository does **not** have one and must not claim that a build is signed.
-6. Publish a versioned GitHub release only after testing and approval. Include changes, known limitations, checksum, minimum supported Windows version, and upgrade/rollback instructions. Do not upload session files or internal device output.
+```powershell
+python -m pip install -r requirements-build.txt
+python -m pip install pyinstaller
+powershell -ExecutionPolicy Bypass -File scripts\build_release.ps1
+```
 
-## Update behavior and user data
+The script runs unit tests and a compile check, packages the app, copies it to `dist\Layer 8 Toolkit 1.0.0.exe`, and prints its SHA-256 checksum. The EXE bundles the QR library, licenses, offline OUI database, and IANA port-registry snapshot.
 
-The app currently has **no automatic update mechanism**. Users replace the EXE with an approved newer version. On first run, Toolkit copies any existing `%LOCALAPPDATA%\SwitchPort Resolver\settings.json` into its own `%LOCALAPPDATA%\Layer 8 Toolkit\settings.json`; later changes do not affect the old app. Session files remain wherever the user explicitly saved them. Toolkit logs are under `%LOCALAPPDATA%\Layer 8 Toolkit\Logs`.
+## Team validation
 
-Settings contain no raw device output. `.sprsession` files do contain raw switch/router text and should follow the team's data-handling rules. A release should be piloted with a small group before broad deployment.
+Test the packaged app on representative Windows 10/11 PCs, including high-DPI displays and keyboard navigation. Check light/dark themes, MAC-only data, two-router correlation, input warnings, session open/save, CSV/Excel sorting and filters, search by port number and use, and Wi-Fi QR scanning/export on personal and open test networks while disconnected from the internet. Confirm the title bar shows the release version.
+
+Record the EXE checksum in release notes. Publish only the source and approved executable; do not upload session files or internal device output. The first 1.0.0 release has no Toolkit rollback release. Before broad distribution, pilot with a small team and decide with IT whether a portable EXE or an organization-signed installer is appropriate. This repository does not contain a signing certificate and must not claim a build is signed.
+
+## Updates and user data
+
+Users update by replacing the EXE. On first run, Toolkit copies any existing `%LOCALAPPDATA%\SwitchPort Resolver\settings.json` into its own `%LOCALAPPDATA%\Layer 8 Toolkit\settings.json`; later changes do not affect the old app. Toolkit logs are under `%LOCALAPPDATA%\Layer 8 Toolkit\Logs`. Settings contain no raw device output. Explicit `.sprsession` files do contain raw switch/router text and should follow the team's data-handling rules.
