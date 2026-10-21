@@ -12,7 +12,7 @@ python -m pip install pyinstaller
 powershell -ExecutionPolicy Bypass -File scripts\build_release.ps1
 ```
 
-The script runs unit tests and a compile check, packages the app, copies it to `dist\Layer 8 Toolkit 1.0.0.exe`, and prints its SHA-256 checksum. The EXE bundles the QR library, licenses, offline OUI database, and IANA port-registry snapshot.
+The script runs unit tests and a compile check, packages the app, copies it to `dist\Layer8Toolkit.exe`, and prints its SHA-256 checksum. Each GitHub release retains its own copy of that filename, while the release title and in-app title show the version. The EXE bundles the QR library, licenses, offline OUI database, and IANA port-registry snapshot.
 
 ## Team validation
 

@@ -13,7 +13,7 @@ try {
 
     $exe = Join-Path $repo 'dist\Layer 8 Toolkit.exe'
     if (-not (Test-Path -LiteralPath $exe)) { throw 'Release executable was not created.' }
-    $releaseExe = Join-Path $repo 'dist\Layer 8 Toolkit 1.0.0.exe'
+    $releaseExe = Join-Path $repo 'dist\Layer8Toolkit.exe'
     Copy-Item -LiteralPath $exe -Destination $releaseExe -Force
     Get-FileHash -LiteralPath $releaseExe -Algorithm SHA256 | Format-List Path, Hash
 }
