@@ -314,10 +314,28 @@ class NetworkToolsView(ttk.Frame):
 
     def _build_site_planner(self):
         page = self._page("Site Planner")
-        ttk.Label(page, text="Repeat a VLAN template inside aligned site blocks. Planning stays offline; no network is contacted.",
-                  style="Muted.TLabel").pack(anchor="w", pady=(0, 8))
+        introduction = ttk.Frame(page)
+        introduction.pack(fill="x", pady=(0, 8))
+        ttk.Label(introduction, text="Repeat a VLAN template inside aligned site blocks. Planning stays offline; no network is contacted.",
+                  style="Muted.TLabel").pack(side="left")
+        self.site_help_button = ttk.Button(introduction, text="?", width=3,
+                                           style="Compact.TButton", command=self._toggle_site_help)
+        self.site_help_button.pack(side="right")
+        Tooltip(self.site_help_button, "How to fill out Site Planner", self.palette_getter)
+
+        self.site_help = ttk.LabelFrame(page, text="HOW TO FILL OUT SITE PLANNER", padding=10)
+        help_lines = (
+            "Parent network: Enter an aligned IPv4 CIDR, such as 10.0.0.0/16 (not a host address like 10.0.0.1/16).",
+            "Site block: Auto picks the smallest fit; enter /21 for growth. Sites to generate must be a positive whole number within capacity.",
+            "VLAN template: One line per VLAN, separated by commas: ID, name, /prefix. Example: 10, Utility, /25. Use unique IDs from 1 to 4094.",
+            "The five example rows below need 1,024 addresses per site. Auto uses /22; /21 leaves 1,024 spare addresses per site.",
+        )
+        for line in help_lines:
+            ttk.Label(self.site_help, text=line, style="Muted.TLabel", wraplength=850,
+                      justify="left").pack(anchor="w", pady=(0, 4))
         fields = ttk.Frame(page)
         fields.pack(fill="x", pady=(0, 8))
+        self.site_help_fields = fields
         self.site_parent = tk.StringVar(value="10.0.0.0/16")
         self.site_block_prefix = tk.StringVar(value="Auto")
         self.site_count = tk.StringVar(value="4")
@@ -375,6 +393,12 @@ class NetworkToolsView(ttk.Frame):
             variable.trace_add("write", self._invalidate_site_plan)
         self.site_template.bind("<<Modified>>", self._site_template_changed)
         self._generate_site_plan()
+
+    def _toggle_site_help(self):
+        if self.site_help.winfo_manager():
+            self.site_help.pack_forget()
+        else:
+            self.site_help.pack(fill="x", pady=(0, 8), before=self.site_help_fields)
 
     def _site_template_changed(self, _event=None):
         if self.site_template.edit_modified():

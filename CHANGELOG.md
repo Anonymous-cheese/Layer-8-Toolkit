@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.1 — 2026-10-22
+
+- Added a compact, in-page `?` guide to Site Planner with the required input format, VLAN example, and Auto-versus-growth site-block explanation.
+
 ## 1.1.0 — 2026-10-21
 
 - Added an offline IPv4 Site Planner. Enter an aligned parent network, a reusable VLAN ID/name/prefix template, a site block prefix (or Auto), and the number of sites to generate. It shows the tightest fitting site block, maximum site count, per-site unused space, exact VLAN CIDRs, and remaining free CIDRs; plans can be copied or exported to CSV.

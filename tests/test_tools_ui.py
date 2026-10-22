@@ -131,6 +131,17 @@ class MacFormatterUiTests(unittest.TestCase):
         self.view.apply_theme(THEMES["dark"])
         self.assertEqual(self.view.site_template.cget("background"), THEMES["dark"]["tool_input_bg"])
 
+    def test_site_planner_help_expands_inside_page(self):
+        self.assertEqual(self.view.site_help.winfo_manager(), "")
+        self.view.site_help_button.invoke()
+        self.assertEqual(self.view.site_help.winfo_manager(), "pack")
+        self.assertIn(self.view.site_help, self.view.page_frames["Site Planner"].winfo_children())
+        help_text = "\n".join(label.cget("text") for label in self.view.site_help.winfo_children())
+        self.assertIn("Example: 10, Utility, /25", help_text)
+        self.assertIn("Auto uses /22", help_text)
+        self.view.site_help_button.invoke()
+        self.assertEqual(self.view.site_help.winfo_manager(), "")
+
     def test_option121_builder_and_decoder_modes(self):
         self.view.dhcp_choice.set("121 — Classless static routes")
         self.view._switch_dhcp_option()

@@ -1,6 +1,6 @@
 # Layer 8 Toolkit
 
-Version 1.1.0 — a portable Windows toolkit for network engineers.
+Version 1.1.1 — a portable Windows toolkit for network engineers.
 
 ![Layer 8 Toolkit 1.0.0 showing the IPv4 subnet calculator](docs/images/layer-8-toolkit-1.0.0.jpg)
 
@@ -28,6 +28,8 @@ Resolver options such as MAC formatting, port-channel/CPU exclusion, and IP-matc
 ### Site Planner
 
 Under **IP Math → Site Planner**, enter a parent IPv4 CIDR and one `VLAN, name, /prefix` line per VLAN. Leave the site block on **Auto** for the smallest fit, or enter a shorter prefix such as `/21` to reserve growth space. Set the number of sites to generate; the planner shows maximum capacity, each site's summary CIDR, VLAN allocations, and exact unallocated CIDRs. You can copy a selected CIDR, copy the complete plan, or export CSV. It calculates locally and never changes network configuration.
+
+Click the **?** in Site Planner for an in-page example and a quick explanation of each input.
 
 ## Important notes
 

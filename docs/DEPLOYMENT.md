@@ -1,6 +1,6 @@
 # Build and release guide
 
-Layer 8 Toolkit 1.1.0 is a portable, one-file Windows EXE. It is not code-signed and does not auto-update. End users need no Python installation or separate data download.
+Layer 8 Toolkit 1.1.1 is a portable, one-file Windows EXE. It is not code-signed and does not auto-update. End users need no Python installation or separate data download.
 
 ## Build
 
