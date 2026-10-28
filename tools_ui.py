@@ -18,6 +18,7 @@ from network_tools import (
 )
 from dns_helper import RECORD_TYPES, RECORD_USES, build_dns_record, reverse_ptr_owner, ttl_display
 from dhcp_option121 import decode_option121, encode_option121
+from clock_tools import clock_reference_rows, convert_clock_time
 from mtu_helper import TUNNEL_OVERHEAD, calculate_mtu, mtu_summary
 from port_reference import REGISTRY_DATE, load_port_registry, search_ports
 from site_planner import plan_sites, site_plan_rows
@@ -95,6 +96,7 @@ class NetworkToolsView(ttk.Frame):
         self._build_dns_records()
         self._build_mtu()
         self._build_wifi_qr()
+        self._build_clock()
         self._style_surface_widgets()
 
     def _style_surface_widgets(self):
@@ -1129,6 +1131,57 @@ class NetworkToolsView(ttk.Frame):
             self.status_callback("Type 7 input needs correction")
             return
         self.status_callback("Type 7 value decoded locally")
+
+    def _build_clock(self):
+        page = self._page("24-Hour Clock")
+        ttk.Label(page, text="Convert between 12-hour and 24-hour notation. This does not change the date or time zone.",
+                  style="Muted.TLabel").pack(anchor="w", pady=(0, 9))
+
+        controls = ttk.Frame(page)
+        controls.pack(fill="x", pady=(0, 4))
+        self.clock_input = tk.StringVar(value="2:30 PM")
+        entry = self._field(controls, "TIME", self.clock_input, 28)
+        entry.bind("<Return>", self._convert_clock)
+        self._button(controls, "Convert", self._convert_clock,
+                     "Convert 12-hour and 24-hour clock notation", "Accent.TButton")
+        ttk.Label(page, text="Try 2:30 PM, 14:30, or 1430. Without AM/PM, input is treated as 24-hour time.",
+                  style="Muted.TLabel").pack(anchor="w", pady=(0, 6))
+        self.clock_error = tk.StringVar()
+        ttk.Label(page, textvariable=self.clock_error, style="Error.TLabel").pack(anchor="w")
+
+        result = self._section(page, "CONVERSION")
+        self.clock_values = self._result_rows(result, ("24-hour", "12-hour"))
+
+        reference = self._section(page, "24-HOUR REFERENCE")
+        ttk.Label(reference, text="Whole hours at a glance; enter any minutes above for an exact conversion.",
+                  style="Muted.TLabel").pack(anchor="w", pady=(0, 7))
+        columns = ("morning_24", "morning_12", "afternoon_24", "afternoon_12")
+        self.clock_tree = ttk.Treeview(reference, columns=columns, show="headings",
+                                       height=12, selectmode="none")
+        for column, label in zip(columns, ("24-hour", "12-hour", "24-hour", "12-hour")):
+            self.clock_tree.heading(column, text=label)
+            self.clock_tree.column(column, width=120, minwidth=80, anchor="center")
+        for row in clock_reference_rows():
+            self.clock_tree.insert("", "end", values=row)
+        self.clock_tree.pack(fill="x")
+        self.clock_input.trace_add("write", self._clear_clock_result)
+        self._convert_clock()
+
+    def _clear_clock_result(self, *_args):
+        for variable in self.clock_values.values():
+            variable.set("—")
+        self.clock_error.set("")
+
+    def _convert_clock(self, _event=None):
+        self._clear_clock_result()
+        try:
+            twenty_four, twelve = convert_clock_time(self.clock_input.get())
+        except ValueError as error:
+            self._error(self.clock_error, error)
+            return
+        self.clock_values["24-hour"].set(twenty_four)
+        self.clock_values["12-hour"].set(twelve)
+        self.status_callback("Clock time converted locally")
 
     def _build_port_reference(self):
         page = self._page("Port Reference")

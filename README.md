@@ -1,6 +1,6 @@
 # Layer 8 Toolkit
 
-Version 1.1.1 — a portable Windows toolkit for network engineers.
+Version 1.1.2 — a portable Windows toolkit for network engineers.
 
 ![Layer 8 Toolkit 1.0.0 showing the IPv4 subnet calculator](docs/images/layer-8-toolkit-1.0.0.jpg)
 
@@ -11,7 +11,7 @@ Download the one-file Windows application from the [latest release](https://gith
 - **Resolver:** paste or load up to five switch MAC tables and two router ARP tables, correlate MACs to IPs, inspect an input report, search and sort results, and export visible rows to CSV or filterable Excel. MAC-only Excel exports remain sortable and filterable.
 - **IP tools:** IPv4 and IPv6 subnet calculators, IPv6 subnet planning, an IPv4 Site Planner for repeated VLAN layouts, wildcard-mask checker, and decimal/hex/binary IPv4 conversion.
 - **DHCP and network references:** common DHCP option explanations and encoders, including Cisco WLC/custom Option 43 and classless-route Option 121; an offline searchable IANA port snapshot; DNS record builder; and MTU/overhead calculator.
-- **Utilities:** multiline MAC formatter with offline OUI lookup, Cisco Type 7 decrypter, and Wi-Fi join QR codes with PNG/SVG export, image/payload copy, print sizing, and optional live preview.
+- **Utilities:** multiline MAC formatter with offline OUI lookup, Cisco Type 7 decrypter, 12-hour/24-hour clock converter and reference table, and Wi-Fi join QR codes with PNG/SVG export, image/payload copy, print sizing, and optional live preview.
 - **Workspace settings:** dark/light palettes with editable hex colors, startup tab, and persistent tab order, visibility, and custom groups. Settings open inside the main window.
 
 All calculations and reference searches work offline. Updating the optional OUI database is an explicit network action. The bundled port registry is a dated snapshot; its provenance is in [data/SOURCE.md](data/SOURCE.md).
@@ -30,6 +30,10 @@ Resolver options such as MAC formatting, port-channel/CPU exclusion, and IP-matc
 Under **IP Math → Site Planner**, enter a parent IPv4 CIDR and one `VLAN, name, /prefix` line per VLAN. Leave the site block on **Auto** for the smallest fit, or enter a shorter prefix such as `/21` to reserve growth space. Set the number of sites to generate; the planner shows maximum capacity, each site's summary CIDR, VLAN allocations, and exact unallocated CIDRs. You can copy a selected CIDR, copy the complete plan, or export CSV. It calculates locally and never changes network configuration.
 
 Click the **?** in Site Planner for an in-page example and a quick explanation of each input.
+
+### 24-Hour Clock
+
+Under **Utilities → 24-Hour Clock**, enter a time such as `2:30 PM`, `14:30`, or `1430` to see both clock formats. Inputs without AM/PM are interpreted as 24-hour time. The table lists every whole hour from `00:00` through `23:00`. This changes notation only; it does not convert dates or time zones.
 
 ## Important notes
 

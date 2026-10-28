@@ -53,7 +53,7 @@ STARTUP_PAGES = (
     "Resolver", "IPv4 Subnet", "Site Planner", "IPv6 Calculator", "IPv6 Planning",
     "Wildcard Checker", "Decimal IP", "DHCP Options", "MAC Formatter + OUI",
     "Type 7 Decrypter", "Port Reference", "DNS Records",
-    "MTU Calculator", "Wi-Fi QR",
+    "MTU Calculator", "Wi-Fi QR", "24-Hour Clock",
 )
 DEFAULT_GROUPS = (
     {"id": "ip_math", "name": "IP Math"},
@@ -69,7 +69,7 @@ DEFAULT_ASSIGNMENTS = {
     "DHCP Options": "reference", "Port Reference": "reference",
     "DNS Records": "reference",
     "MAC Formatter + OUI": "utilities", "Type 7 Decrypter": "utilities",
-    "Wi-Fi QR": "utilities",
+    "Wi-Fi QR": "utilities", "24-Hour Clock": "utilities",
 }
 LEGACY_DEFAULT_ASSIGNMENTS = {**DEFAULT_ASSIGNMENTS, "MAC Formatter + OUI": "reference"}
 DEFAULT_OPTIONS = {
@@ -194,6 +194,8 @@ def load_preferences(path=None):
                         order.append(label)
                 if "Site Planner" not in order and "IPv4 Subnet" in order:
                     order.insert(order.index("IPv4 Subnet") + 1, "Site Planner")
+                if "24-Hour Clock" not in order and "Wi-Fi QR" in order:
+                    order.insert(order.index("Wi-Fi QR") + 1, "24-Hour Clock")
                 preferences["tabs"]["order"] = order + [label for label in STARTUP_PAGES if label not in order]
             stored_hidden = tabs.get("hidden", [])
             if isinstance(stored_hidden, list):
@@ -232,9 +234,12 @@ def load_preferences(path=None):
                     and label in STARTUP_PAGES and label != "Resolver" and group_id in known_ids
                 }
                 # Move the old default layout forward without changing custom group choices.
-                old_default = {label: group_id for label, group_id in LEGACY_DEFAULT_ASSIGNMENTS.items()
-                               if label != "Site Planner"}
-                if (preferences["tabs"]["assignments"] in (LEGACY_DEFAULT_ASSIGNMENTS, old_default)
+                old_defaults = tuple(
+                    {label: group_id for label, group_id in LEGACY_DEFAULT_ASSIGNMENTS.items()
+                     if label not in omitted}
+                    for omitted in ((), ("Site Planner",), ("24-Hour Clock",),
+                                    ("Site Planner", "24-Hour Clock")))
+                if (preferences["tabs"]["assignments"] in old_defaults
                         and {group["id"]: group["name"] for group in preferences["tabs"]["groups"]}
                         == {group["id"]: group["name"] for group in DEFAULT_GROUPS}):
                     preferences["tabs"]["assignments"]["MAC Formatter + OUI"] = "utilities"
@@ -242,6 +247,10 @@ def load_preferences(path=None):
                         and (not isinstance(stored_order, list) or "Site Planner" not in stored_order)
                         and "ip_math" in known_ids):
                     preferences["tabs"]["assignments"]["Site Planner"] = "ip_math"
+                if ("24-Hour Clock" not in stored_assignments
+                        and (not isinstance(stored_order, list) or "24-Hour Clock" not in stored_order)
+                        and "utilities" in known_ids):
+                    preferences["tabs"]["assignments"]["24-Hour Clock"] = "utilities"
             elif isinstance(stored_groups, list):
                 preferences["tabs"]["assignments"] = {}
         if preferences["options"]["startup_page"] in preferences["tabs"]["hidden"]:

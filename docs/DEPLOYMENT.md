@@ -1,6 +1,6 @@
 # Build and release guide
 
-Layer 8 Toolkit 1.1.1 is a portable, one-file Windows EXE. It is not code-signed and does not auto-update. End users need no Python installation or separate data download.
+Layer 8 Toolkit 1.1.2 is a portable, one-file Windows EXE. It is not code-signed and does not auto-update. End users need no Python installation or separate data download.
 
 ## Build
 
@@ -16,7 +16,7 @@ The script runs unit tests and a compile check, packages the app, copies it to `
 
 ## Team validation
 
-Test the packaged app on representative Windows 10/11 PCs, including high-DPI displays and keyboard navigation. Check light/dark themes, MAC-only data, two-router correlation, input warnings, session open/save, CSV/Excel sorting and filters, search by port number and use, and Wi-Fi QR scanning/export on personal and open test networks while disconnected from the internet. For Site Planner, check exact-fit and growth-sized blocks, VLAN alignment, copy, and CSV export. Confirm the title bar shows the release version.
+Test the packaged app on representative Windows 10/11 PCs, including high-DPI displays and keyboard navigation. Check light/dark themes, MAC-only data, two-router correlation, input warnings, session open/save, CSV/Excel sorting and filters, search by port number and use, and Wi-Fi QR scanning/export on personal and open test networks while disconnected from the internet. For Site Planner, check exact-fit and growth-sized blocks, VLAN alignment, copy, and CSV export. For 24-Hour Clock, check noon, midnight, AM/PM input, 24-hour input, and all 24 reference rows. Confirm the title bar shows the intended version.
 
 Record the EXE checksum in release notes. Publish only the source and approved executable; do not upload session files or internal device output. Release 1.0.0 remains available for rollback. Before broad distribution, pilot with a small team and decide with IT whether a portable EXE or an organization-signed installer is appropriate. This repository does not contain a signing certificate and must not claim a build is signed.
 

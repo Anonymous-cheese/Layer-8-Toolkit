@@ -115,6 +115,22 @@ class PreferencesTests(unittest.TestCase):
             save_preferences(restored, path)
             self.assertNotIn("Site Planner", load_preferences(path)["tabs"]["assignments"])
 
+    def test_new_clock_joins_utilities_without_overriding_custom_choice(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "settings.json"
+            old = default_preferences()
+            old["tabs"]["order"].remove("24-Hour Clock")
+            del old["tabs"]["assignments"]["24-Hour Clock"]
+            save_preferences(old, path)
+            restored = load_preferences(path)
+            self.assertEqual(restored["tabs"]["assignments"]["24-Hour Clock"], "utilities")
+            self.assertEqual(restored["tabs"]["order"].index("24-Hour Clock"),
+                             restored["tabs"]["order"].index("Wi-Fi QR") + 1)
+
+            restored["tabs"]["assignments"].pop("24-Hour Clock")
+            save_preferences(restored, path)
+            self.assertNotIn("24-Hour Clock", load_preferences(path)["tabs"]["assignments"])
+
     def test_all_tabs_cannot_be_hidden_by_saved_settings(self):
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / "settings.json"

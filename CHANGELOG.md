@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.2 — 2026-10-28
+
+- Added an offline 12-hour/24-hour clock converter and a full-day reference table under Utilities. It accepts AM/PM, `HH:MM`, and four-digit 24-hour input without changing time zones or dates.
+- Existing tab layouts gain the new utility tab while preserving deliberate grouping choices.
+
 ## 1.1.1 — 2026-10-22
 
 - Added a compact, in-page `?` guide to Site Planner with the required input format, VLAN example, and Auto-versus-growth site-block explanation.

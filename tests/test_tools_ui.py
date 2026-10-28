@@ -187,6 +187,20 @@ class MacFormatterUiTests(unittest.TestCase):
         self.assertEqual(self.view.type7_input.get(), "")
         self.assertEqual(self.view.type7_error.get(), "")
 
+    def test_clock_converter_and_reference_table(self):
+        self.assertIn("24-Hour Clock", self.view.page_frames)
+        self.assertEqual(len(self.view.clock_tree.get_children()), 12)
+        self.assertEqual(self.view.clock_values["24-hour"].get(), "14:30")
+        self.view.clock_input.set("12:00 AM")
+        self.assertEqual(self.view.clock_values["24-hour"].get(), "—")
+        self.view._convert_clock()
+        self.assertEqual(self.view.clock_values["24-hour"].get(), "00:00")
+        self.assertEqual(self.view.clock_values["12-hour"].get(), "12:00 AM")
+        self.view.clock_input.set("24:00")
+        self.view._convert_clock()
+        self.assertTrue(self.view.clock_error.get())
+        self.assertEqual(self.view.clock_values["24-hour"].get(), "—")
+
     def test_port_reference(self):
         self.view.port_query.set("remote desktop")
         self.view._refresh_port_results()
